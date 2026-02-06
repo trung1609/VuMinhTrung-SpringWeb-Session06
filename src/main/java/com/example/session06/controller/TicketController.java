@@ -1,15 +1,19 @@
 package com.example.session06.controller;
 
+import com.example.session06.model.dto.request.PageRequestDTO;
 import com.example.session06.model.dto.request.TicketRequest;
 import com.example.session06.model.dto.response.ApiResponse;
+import com.example.session06.model.dto.response.PageResponse;
 import com.example.session06.model.dto.response.TicketResponse;
 import com.example.session06.model.dto.response.TicketSummaryResponse;
 import com.example.session06.service.impl.ParkingServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -72,6 +76,23 @@ public class TicketController {
                         "Get parking ticket by check-in time successfully",
                         true,
                         parkingService.getParkingTicketByCheckInTime()
+                ),
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<ApiResponse<PageResponse<TicketResponse>>> getParkingTicketByLicensePlate(
+            @ModelAttribute PageRequestDTO requestDTO,
+            @RequestParam String licensePlate,
+            @RequestParam @DateTimeFormat(pattern = "dd/MM/yyyy") LocalDate fromDate,
+            @RequestParam @DateTimeFormat(pattern = "dd/MM/yyyy") LocalDate toDate
+            ){
+        return new ResponseEntity<>(
+                new ApiResponse<>(
+                        "Get all ticket by license plate successfully",
+                        true,
+                        parkingService.findAllByLicensePlate(licensePlate, fromDate, toDate, requestDTO)
                 ),
                 HttpStatus.OK
         );

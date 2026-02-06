@@ -1,7 +1,10 @@
 package com.example.session06.service.impl;
 
+import com.example.session06.mapper.PageMapper;
 import com.example.session06.mapper.TicketMapper;
+import com.example.session06.model.dto.request.PageRequestDTO;
 import com.example.session06.model.dto.request.TicketRequest;
+import com.example.session06.model.dto.response.PageResponse;
 import com.example.session06.model.dto.response.TicketResponse;
 import com.example.session06.model.dto.response.TicketSummaryResponse;
 import com.example.session06.model.entity.ParkingTicket;
@@ -12,6 +15,10 @@ import com.example.session06.repository.VehicleRepository;
 import com.example.session06.repository.ZoneRepository;
 import com.example.session06.service.ParkingService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +39,9 @@ public class ParkingServiceImpl implements ParkingService {
     private VehicleRepository vehicleRepository;
 
     @Autowired
+    private PageMapper pageMapper;
+
+    @Autowired
     private TicketMapper ticketMapper;
 
     @Override
@@ -46,7 +56,7 @@ public class ParkingServiceImpl implements ParkingService {
                 .orElseThrow(() -> new RuntimeException("Zone not found with ID: " + ticketRequest.getZoneId()));
 
         // Kiểm tra xem Zone còn trống chỗ không
-        if(existingZone.getOccupiedSpots() >= existingZone.getCapacity()){
+        if (existingZone.getOccupiedSpots() >= existingZone.getCapacity()) {
             throw new RuntimeException("Zone is full");
         }
 
@@ -55,7 +65,7 @@ public class ParkingServiceImpl implements ParkingService {
         // Gắn Vehicle và Zone tương ứng
         parkingTicket.setVehicle(existingVehicle);
         parkingTicket.setZone(existingZone);
-         // Gán checkInTime là thời gian hiện tại
+        // Gán checkInTime là thời gian hiện tại
         parkingTicket.setCheckInTime(LocalDateTime.now());
 
         // Cập nhật lại occupiedSpots của Zone
@@ -91,5 +101,35 @@ public class ParkingServiceImpl implements ParkingService {
     public List<TicketSummaryResponse> getParkingTicketByCheckInTime() {
         LocalDate today = LocalDate.now();
         return parkingRepository.getParkingTicketByCheckInTime(today.atStartOfDay(), today.plusDays(1).atStartOfDay());
+    }
+
+    @Override
+    public PageResponse<TicketResponse> findAllByLicensePlate(String licensePlate,LocalDate fromDate, LocalDate toDate, PageRequestDTO pageRequestDTO) {
+        Sort sort;
+        if (pageRequestDTO.getSortBy() == null || pageRequestDTO.getSortBy().isBlank()) {
+            sort = Sort.unsorted();
+        } else {
+            sort = Sort.by(pageRequestDTO.getSortBy());
+        }
+
+        if (pageRequestDTO.getDirection() == null || pageRequestDTO.getDirection().isBlank()) {
+            sort = Sort.unsorted();
+        }else {
+            sort = Sort.by(pageRequestDTO.getDirection());
+        }
+
+        if(pageRequestDTO.getPage() == null || pageRequestDTO.getPage() < 0){
+            pageRequestDTO.setPage(0);
+        }
+
+        if (pageRequestDTO.getSize() == null || pageRequestDTO.getSize() < 0){
+            pageRequestDTO.setSize(5);
+        }
+
+        Pageable pageable = PageRequest.of(pageRequestDTO.getPage(), pageRequestDTO.getSize(), sort);
+
+        Page<TicketResponse> responses = parkingRepository.findAllByLicensePlate(licensePlate, fromDate.atStartOfDay(), toDate.atStartOfDay(), pageable);
+
+        return pageMapper.toPageResponse(responses);
     }
 }
