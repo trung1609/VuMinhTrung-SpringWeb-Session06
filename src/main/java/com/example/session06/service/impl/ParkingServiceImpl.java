@@ -3,6 +3,7 @@ package com.example.session06.service.impl;
 import com.example.session06.mapper.TicketMapper;
 import com.example.session06.model.dto.request.TicketRequest;
 import com.example.session06.model.dto.response.TicketResponse;
+import com.example.session06.model.dto.response.TicketSummaryResponse;
 import com.example.session06.model.entity.ParkingTicket;
 import com.example.session06.model.entity.Vehicle;
 import com.example.session06.model.entity.Zone;
@@ -14,7 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class ParkingServiceImpl implements ParkingService {
@@ -82,5 +85,11 @@ public class ParkingServiceImpl implements ParkingService {
         // Lưu thông tin vào Database
         ParkingTicket savedTicket = parkingRepository.save(parkingTicket);
         return ticketMapper.toDTO(savedTicket);
+    }
+
+    @Override
+    public List<TicketSummaryResponse> getParkingTicketByCheckInTime() {
+        LocalDate today = LocalDate.now();
+        return parkingRepository.getParkingTicketByCheckInTime(today.atStartOfDay(), today.plusDays(1).atStartOfDay());
     }
 }
