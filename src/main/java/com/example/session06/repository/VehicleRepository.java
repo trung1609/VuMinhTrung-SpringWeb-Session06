@@ -14,4 +14,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 
     @Query("select new com.example.session06.model.dto.response.VehicleResponse(v.id,v.licensePlate,v.color,v.type) from Vehicle v where :keyword is null or lower(v.licensePlate) like lower(concat('%',cast(:keyword as string ), '%'))")
     Page<VehicleResponse> findAllByKeyword(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("select new com.example.session06.model.dto.response.VehicleResponse(v.id,v.licensePlate,v.color,v.type) from Vehicle v where v.licensePlate = :vehicleLicensePlate")
+    VehicleResponse findByLicensePlate(@Param("vehicleLicensePlate") String licensePlate);
 }

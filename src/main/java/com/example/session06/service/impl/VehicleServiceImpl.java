@@ -30,8 +30,13 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Override
     public VehicleResponse createVehicle(VehicleRequest vehicleRequest) {
+        VehicleResponse vehicleResponse = vehicleRepository.findByLicensePlate(vehicleRequest.getLicensePlate());
+        if (vehicleResponse != null){
+            throw new RuntimeException("Vehicle with license plate " + vehicleRequest.getLicensePlate() + " already exists");
+        }
         Vehicle vehicle = vehicleRepository.save(vehicleMapper.toEntity(vehicleRequest));
-        return vehicleMapper.toDTO(vehicle);
+        vehicleResponse = vehicleMapper.toDTO(vehicle);
+        return vehicleResponse;
     }
 
     @Override

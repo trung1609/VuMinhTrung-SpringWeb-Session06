@@ -19,6 +19,7 @@ public class TicketMapper {
                 .checkInTime(ticket.getCheckInTime())
                 .checkOutTime(ticket.getCheckOutTime())
                 .zoneName(ticket.getZone().getName())
+                .type(ticket.getVehicle().getType())
                 .build();
     }
 

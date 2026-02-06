@@ -20,14 +20,25 @@ public class VehicleController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<VehicleResponse>> createVehicle(@RequestBody VehicleRequest vehicleRequest) {
-        return new ResponseEntity<>(
-                new ApiResponse<>(
-                        "Create vehicle successfully",
-                        true,
-                        vehicleService.createVehicle(vehicleRequest)
-                ),
-                HttpStatus.CREATED
-        );
+        try {
+            return new ResponseEntity<>(
+                    new ApiResponse<>(
+                            "Create vehicle successfully",
+                            true,
+                            vehicleService.createVehicle(vehicleRequest)
+                    ),
+                    HttpStatus.CREATED
+            );
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(
+                    new ApiResponse<>(
+                            e.getMessage(),
+                            false,
+                            null
+                    ),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
     }
 
     @GetMapping

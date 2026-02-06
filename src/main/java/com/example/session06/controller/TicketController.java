@@ -7,10 +7,7 @@ import com.example.session06.service.impl.ParkingServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/tickets")
@@ -28,9 +25,32 @@ public class TicketController {
                             true,
                             parkingService.checkIn(ticketRequest)
                     ),
-                    HttpStatus.CREATED
+                    HttpStatus.OK
             );
         } catch (RuntimeException e) {
+            return new ResponseEntity<>(
+                    new ApiResponse<>(
+                            e.getMessage(),
+                            false,
+                            null
+                    ),
+                    HttpStatus.NOT_FOUND
+            );
+        }
+    }
+
+    @PostMapping("/check-out/{vehicleId}")
+    public ResponseEntity<ApiResponse<TicketResponse>> checkOut(@PathVariable Long vehicleId) {
+        try {
+            return new ResponseEntity<>(
+                    new ApiResponse<>(
+                            "Check out successfully",
+                            true,
+                            parkingService.checkOut(vehicleId)
+                    ),
+                    HttpStatus.OK
+            );
+        }catch (RuntimeException e){
             return new ResponseEntity<>(
                     new ApiResponse<>(
                             e.getMessage(),

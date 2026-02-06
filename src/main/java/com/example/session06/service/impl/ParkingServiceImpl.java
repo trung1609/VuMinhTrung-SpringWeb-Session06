@@ -34,25 +34,53 @@ public class ParkingServiceImpl implements ParkingService {
     @Override
     @Transactional
     public TicketResponse checkIn(TicketRequest ticketRequest) {
-        Vehicle existingVehicle = vehicleRepository.findById(ticketRequest.getVehicleId()).orElseThrow(() -> new RuntimeException("Vehicle not found with ID: " + ticketRequest.getVehicleId()));
-        Zone existingZone = zoneRepository.findById(ticketRequest.getZoneId()).orElseThrow(() -> new RuntimeException("Zone not found with ID: " + ticketRequest.getZoneId()));
+        // Kiểm tra Vehicle có tồn tại không
+        Vehicle existingVehicle = vehicleRepository.findById(ticketRequest.getVehicleId())
+                .orElseThrow(() -> new RuntimeException("Vehicle not found with ID: " + ticketRequest.getVehicleId()));
 
-        if(existingZone.getOccupiedSpots() <= 0){
+        // Kiểm tra Zone có tồn tại không
+        Zone existingZone = zoneRepository.findById(ticketRequest.getZoneId())
+                .orElseThrow(() -> new RuntimeException("Zone not found with ID: " + ticketRequest.getZoneId()));
+
+        // Kiểm tra xem Zone còn trống chỗ không
+        if(existingZone.getOccupiedSpots() >= existingZone.getCapacity()){
             throw new RuntimeException("Zone is full");
         }
 
-        existingZone.setOccupiedSpots(existingZone.getOccupiedSpots() - 1);
-
+        // Tạo mới ParkingTicket
         ParkingTicket parkingTicket = new ParkingTicket();
+        // Gắn Vehicle và Zone tương ứng
         parkingTicket.setVehicle(existingVehicle);
         parkingTicket.setZone(existingZone);
+         // Gán checkInTime là thời gian hiện tại
         parkingTicket.setCheckInTime(LocalDateTime.now());
+
+        // Cập nhật lại occupiedSpots của Zone
+        existingZone.setOccupiedSpots(existingZone.getOccupiedSpots() + 1);
+        zoneRepository.save(existingZone);
+
+        // Lưu thông tin vào Database
         ParkingTicket savedTicket = parkingRepository.save(parkingTicket);
         return ticketMapper.toDTO(savedTicket);
     }
 
     @Override
+    @Transactional
     public TicketResponse checkOut(Long vehicleId) {
-        return null;
+        // Tìm kiếm ParkingTicket gần nhất của xe này mà chưa có checkOutTime
+        ParkingTicket parkingTicket = parkingRepository.findLatestActiveTicketByVehicleId(vehicleId).stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("No active parking ticket found for vehicle id: " + vehicleId));
+
+        // Cập nhật checkOutTime là thời gian hiện tại
+        parkingTicket.setCheckOutTime(LocalDateTime.now());
+
+        // Cập nhật lại occupiedSpots của Zone
+        Zone zone = parkingTicket.getZone();
+        zone.setOccupiedSpots(zone.getOccupiedSpots() - 1);
+        zoneRepository.save(zone);
+
+        // Lưu thông tin vào Database
+        ParkingTicket savedTicket = parkingRepository.save(parkingTicket);
+        return ticketMapper.toDTO(savedTicket);
     }
 }
